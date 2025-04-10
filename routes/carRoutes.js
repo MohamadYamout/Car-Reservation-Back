@@ -1,3 +1,4 @@
+// carRoutes.js
 const express = require('express');
 const Car = require('../models/Car');
 const router = express.Router();
@@ -7,6 +8,28 @@ router.get('/', async (req, res) => {
   try {
     const cars = await Car.find();
     res.json(cars);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get distinct car groups from the Car collection
+router.get('/groups', async (req, res) => {
+  try {
+    // Use Mongoose distinct to return unique group names
+    const groups = await Car.distinct('group');
+    res.json(groups);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get cars by group name
+router.get('/group/:groupName', async (req, res) => {
+  try {
+    const groupName = req.params.groupName;
+    const carsByGroup = await Car.find({ group: groupName });
+    res.json(carsByGroup);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -55,3 +78,5 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+
