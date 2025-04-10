@@ -11,6 +11,8 @@ const reservationSchema = new mongoose.Schema({
   dropoffDateTime: Date,
   additionalServices: [String],
   totalPrice: Number,
+  isSaved: { type: Boolean, default: true }  // Marks the reservation as a saved (draft) transaction
 }, { timestamps: true });
 
 module.exports = mongoose.model('Reservation', reservationSchema);
+

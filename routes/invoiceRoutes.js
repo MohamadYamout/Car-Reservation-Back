@@ -6,7 +6,10 @@ const verifyToken = require('../middleware/auth');
 // Create an invoice (after payment)
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const invoice = new Invoice({ ...req.body, userId: req.user.id });
+    const { reservationId, dailyRate, extraCost } = req.body;
+    // Calculate total amount
+    const total = parseFloat(dailyRate) + parseFloat(extraCost);
+    const invoice = new Invoice({ userId: req.user.id, reservationId, amount: total });
     await invoice.save();
     res.status(201).json(invoice);
   } catch (err) {
