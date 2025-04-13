@@ -12,6 +12,7 @@ const reservationRoutes = require('./routes/reservationRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const statRoutes = require('./routes/statRoutes');
+const couponRoutes = require('./routes/couponRoutes');
 
 const app = express();
 app.use(cors());
@@ -34,6 +35,7 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/stats', statRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 5000;
