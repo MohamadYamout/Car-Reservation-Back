@@ -1,14 +1,48 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer  = require('multer');
+const path = require('path');
 const User = require('../models/User');
 const router = express.Router();
 
+// JWT authentication middleware
+const authenticateJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Unauthorized' });
+    req.user = decoded;
+    next();
+  });
+};
+
+// Multer storage configuration for profile pictures
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Ensure that the folder "./uploads/profilePictures" exists
+    cb(null, './uploads/profilePictures');
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const userId = req.user ? req.user.id : 'unknownUser';
+    cb(null, userId + '-' + Date.now() + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1024 * 1024 * 2 } // 2 MB limit
+});
+
+// POST /signup
 router.post('/signup', async (req, res) => {
   const { username, email, password, phone } = req.body;
   try {
     const hashed = await bcrypt.hash(password, 10);
-    // Include the phone field when creating the new user
     const user = new User({ username, email, password: hashed, phone });
     await user.save();
     res.status(201).json({ message: 'User created' });
@@ -16,7 +50,6 @@ router.post('/signup', async (req, res) => {
     res.status(400).json({ error: 'Signup failed', details: err.message });
   }
 });
-
 
 // POST /login
 router.post('/login', async (req, res) => {
@@ -35,30 +68,45 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /profile - Protected route that returns the user details for the logged-in user.
-router.get('/profile', async (req, res) => {
+// GET /profile - Protected route to get user details (including profile picture)
+router.get('/profile', authenticateJWT, async (req, res) => {
   try {
-    // Expect the JWT token in the Authorization header in the format "Bearer <token>"
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    // Return full user details
     res.json({
-      username: user.username,
-      email: user.email,
-      phone: user.phone,
-      createdAt: user.createdAt,
-      address: user.address || ""
+      username:       user.username,
+      email:          user.email,
+      phone:          user.phone,
+      createdAt:      user.createdAt,
+      address:        user.address || "",
+      profilePicture: user.profilePicture
     });
   } catch (error) {
     res.status(401).json({ error: 'Unauthorized' });
+  }
+});
+
+// POST /profile/upload - Upload a new profile picture
+router.post('/profile/upload', authenticateJWT, upload.single('profilePicture'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    // Create a full URL for the uploaded file.
+    const fileName = req.file.filename;
+    const fullUrlPath = `${req.protocol}://${req.get('host')}/uploads/profilePictures/${fileName}`;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.profilePicture = fullUrlPath;
+    await user.save();
+    res.json({ message: 'Profile picture updated successfully', profilePicture: user.profilePicture });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

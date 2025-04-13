@@ -2,6 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');  // <-- Added to work with file paths
 require('dotenv').config();
 
 // Route imports
@@ -15,6 +16,9 @@ const statRoutes = require('./routes/statRoutes');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve the "uploads" directory as a static folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
@@ -34,4 +38,3 @@ app.use('/api/stats', statRoutes);
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
