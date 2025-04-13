@@ -31,7 +31,7 @@ router.post('/', verifyToken, async (req, res) => {
 // If carId is not provided but lineItemId is, it removes the matching car.
 router.put('/selectCar', verifyToken, async (req, res) => {
   try {
-    // Expect { reservationId, carId } for adding a car.
+    // Expect { reservationId, carId } for adding a car or { reservationId, lineItemId } for removal.
     const { reservationId, carId, lineItemId } = req.body;
     let reservation;
     if (reservationId) {
@@ -70,17 +70,28 @@ router.put('/selectCar', verifyToken, async (req, res) => {
           gps: false
         });
       } else if (lineItemId) {
-        // Remove car with the given lineItemId.
+        // Prevent removal if it would leave no cars reserved.
+        if (reservation.cars.length <= 1) {
+          return res.status(400).json({ error: "At least one car must be reserved." });
+        }
+        // Remove the car with the given lineItemId.
         reservation.cars = reservation.cars.filter(li => li._id.toString() !== lineItemId);
       }
     }
     
+    // Save the reservation.
     const savedReservation = await reservation.save();
-    res.status(200).json(savedReservation);
+
+    // Re-populate the car details so that carId contains all necessary fields.
+    const populatedReservation = await Reservation.findById(savedReservation._id)
+      .populate('cars.carId');
+    
+    res.status(200).json(populatedReservation);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
+
 
 // PUT /api/reservations/updateLineItems
 // Updates extra services for each line item – explicitly requires reservationId.

@@ -23,6 +23,26 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+// PUT /api/invoices/:id
+router.put('/:id', verifyToken, async (req, res) => {
+  try {
+    // Find the invoice that belongs to the user.
+    const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found." });
+    }
+
+    // Update invoice fields (e.g., status)
+    invoice.status = req.body.status || invoice.status;
+    // You can extend this update logic for other fields if necessary.
+    await invoice.save();
+
+    res.status(200).json(invoice);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 
 // Get invoices for current user
 router.get('/my-invoices', verifyToken, async (req, res) => {
