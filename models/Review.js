@@ -5,8 +5,9 @@ const reviewSchema = new mongoose.Schema({
     name: String,
     profilePic: String,
     rating: Number,
+    title: String,  // New field for the review title
     comment: String,
     date: { type: Date, default: Date.now }
-  });
-  
-  module.exports = mongoose.model('Review', reviewSchema);
+});
+
+module.exports = mongoose.model('Review', reviewSchema);

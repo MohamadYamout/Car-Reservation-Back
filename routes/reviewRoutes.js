@@ -7,18 +7,19 @@ const verifyToken = require('../middleware/auth');
 // POST a review
 router.post('/', verifyToken, async (req, res) => {
   try {
-    // Look up the logged in user using the id provided by verifyToken middleware
+    // Look up the logged-in user using the id provided by verifyToken middleware
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Create a new review document using user's username and profilePicture
+    // Create a new review document including the title
     const review = new Review({
       userId: user._id,
       name: user.username, // Use the username field from User.js
       profilePic: user.profilePicture || '',
       rating: req.body.rating,
+      title: req.body.title, // New field for review title
       comment: req.body.comment
       // The date field defaults to Date.now() as set in the Review schema
     });
@@ -38,7 +39,7 @@ router.get('/random', async (req, res) => {
       { $sample: { size: 3 } },
       {
         $lookup: {
-          from: "users",           // collection name (MongoDB converts model name to lowercase plural)
+          from: "users", // collection name (MongoDB converts model name to lowercase plural)
           localField: "userId",
           foreignField: "_id",
           as: "userInfo"
@@ -95,6 +96,17 @@ router.get('/', async (req, res) => {
         .limit(limit);
       res.json(reviews);
     }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET reviews for the logged-in user
+router.get('/myreviews', verifyToken, async (req, res) => {
+  try {
+    // Find reviews where the userId matches the logged-in user, sorted by most recent
+    const reviews = await Review.find({ userId: req.user.id }).sort({ date: -1 });
+    res.json(reviews);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

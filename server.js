@@ -2,7 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');  // <-- Added to work with file paths
+const path = require('path');
 require('dotenv').config();
 
 // Route imports
@@ -13,6 +13,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const statRoutes = require('./routes/statRoutes');
 const couponRoutes = require('./routes/couponRoutes');
+const creditCardRoutes = require('./routes/creditCardRoutes');  // New route
 
 const app = express();
 app.use(cors());
@@ -36,6 +37,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/stats', statRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/creditcards', creditCardRoutes);  // Mount credit card route
 
 // Start the server
 const PORT = process.env.PORT || 5000;
