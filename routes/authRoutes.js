@@ -9,9 +9,7 @@ const router = express.Router();
 // JWT authentication middleware
 const authenticateJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
+  if (!authHeader) return res.status(401).json({ error: 'No token provided' });
   const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) return res.status(401).json({ error: 'Unauthorized' });
@@ -23,7 +21,6 @@ const authenticateJWT = (req, res, next) => {
 // Multer storage configuration for profile pictures
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Ensure that the folder "./uploads/profilePictures" exists
     cb(null, './uploads/profilePictures');
   },
   filename: function (req, file, cb) {
@@ -32,7 +29,6 @@ const storage = multer.diskStorage({
     cb(null, userId + '-' + Date.now() + ext);
   }
 });
-
 const upload = multer({
   storage: storage,
   limits: { fileSize: 1024 * 1024 * 2 } // 2 MB limit
@@ -57,10 +53,8 @@ router.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User not found' });
-
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid password' });
-
     const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET);
     res.json({ token, user: { username: user.username, email: user.email } });
   } catch (err) {
@@ -68,19 +62,17 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /profile - Protected route to get user details (including profile picture)
+// GET /profile - Protected route to get user details (including points)
 router.get('/profile', authenticateJWT, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({
       username:       user.username,
       email:          user.email,
       phone:          user.phone,
       createdAt:      user.createdAt,
-      address:        user.address || "",
+      points:         user.points,
       profilePicture: user.profilePicture
     });
   } catch (error) {
@@ -94,10 +86,8 @@ router.post('/profile/upload', authenticateJWT, upload.single('profilePicture'),
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    // Create a full URL for the uploaded file.
     const fileName = req.file.filename;
     const fullUrlPath = `${req.protocol}://${req.get('host')}/uploads/profilePictures/${fileName}`;
-
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
