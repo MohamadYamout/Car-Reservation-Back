@@ -13,7 +13,8 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const statRoutes = require('./routes/statRoutes');
 const couponRoutes = require('./routes/couponRoutes');
-const creditCardRoutes = require('./routes/creditCardRoutes');  // New route
+const creditCardRoutes = require('./routes/creditCardRoutes');
+const adminRoutes = require('./routes/adminRoutes');  // New admin routes
 
 const app = express();
 app.use(cors());
@@ -38,6 +39,7 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/stats', statRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/creditcards', creditCardRoutes);  // Mount credit card route
+app.use('/api/admin', adminRoutes);  // Mount admin routes
 
 // Start the server
 const PORT = process.env.PORT || 5000;

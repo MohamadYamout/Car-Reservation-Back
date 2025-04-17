@@ -2,6 +2,8 @@
 const express = require('express');
 const Car = require('../models/Car');
 const router = express.Router();
+const auth = require('../middleware/auth');
+const isAdmin = require('../middleware/isAdmin');
 
 // Get all cars
 router.get('/', async (req, res) => {
@@ -46,8 +48,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Add a new car
-router.post('/', async (req, res) => {
+// Add a new car - admin only
+router.post('/', auth, isAdmin, async (req, res) => {
   try {
     const newCar = new Car(req.body);
     const savedCar = await newCar.save();
@@ -58,7 +60,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update a car
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, isAdmin, async (req, res) => {
   try {
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updatedCar);
@@ -67,8 +69,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete a car
-router.delete('/:id', async (req, res) => {
+// Delete a car - admin only
+router.delete('/:id', auth, isAdmin, async (req, res) => {
   try {
     await Car.findByIdAndDelete(req.params.id);
     res.json({ message: 'Car deleted' });
